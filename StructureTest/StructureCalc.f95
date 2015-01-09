@@ -1,12 +1,42 @@
 subroutine structurecalc(d,n,s,x,v,a)
 !
-! 2D dynamics calculation test for cubes
-! M. Salay 20150103
+!  structurecalc calclates dynamic structure behavior to test methods
+!    Copyright (C) 2015  Michael Salay,   Mike.Salay at gmail
 !
-
-! - Only considering gravitational and inertial force
-! - Hardcoded for four cubes
-! - Assuming all masses are 1 kg
+!    This program is free software: you can redistribute it and/or modify
+!    it under the terms of the GNU General Public License as published by
+!    the Free Software Foundation, either version 3 of the License, or
+!    (at your option) any later version.
+!
+!    This program is distributed in the hope that it will be useful,
+!    but WITHOUT ANY WARRANTY; without even the implied warranty of
+!    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!    GNU General Public License for more details.
+!
+!    You should have received a copy of the GNU General Public License
+!    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+!
+!  structurecalc M. Salay 20150109
+!
+!  Eventually intended to test different structure calculation methods,
+!  component failure methods, and time advancement methods, with 
+!  the possibility of providing an alternate structure calculation for
+!  KSP that can be run on a separate processor thereby reducing the load
+!  on the primary process.  For the final version the methods can be
+!  coded in a different language if necessary.
+!
+!
+!  Just placeholder forces and time advancement to test communication with drawing
+!  - some forces and torques representing linear and torsional springs were applied 
+!  - I but did not verify that equation set is complete
+!  - Perhaps fixed joints with torsional springs be the reference instead
+!    
+!  Works - but unstable at start if target direction not in line with initial position
+!  - Krakeny behavior
+!  - Need to check equations sets
+!
+!  - Only considering gravitational and inertial force
+!  - Assuming all masses are 1 kg
 !
 !  Possible forces
 !    - gravity
@@ -17,11 +47,8 @@ subroutine structurecalc(d,n,s,x,v,a)
 !
 ! To do:
 !
-!  - Test 3D
 !  - Forces and other parameters as arguments
-!  - Function cross and cross2
 !
-!  2d cross product: x cross y = x1y2-x2y1
 !
  use transrot
 
@@ -89,12 +116,6 @@ subroutine structurecalc(d,n,s,x,v,a)
    a(5)= a(5)+dt*1.9
    a(6)= a(6)+dt*2.1
  end if
-
-! XXX 
-! XXX 
-! XXX !!! Needs to adjust angles so that angle + 2 * pi is not interpreted
-! XXX  !  Krakeny behavior
-! XXX 
 
 
 ! dyn indices (parameter,object number) (c++ with reversed order)
@@ -182,9 +203,10 @@ subroutine structurecalc(d,n,s,x,v,a)
  f(d+1:s,1:n-1)=f(d+1:s,1:n-1) -dxa(d+1:s,:)            ! bend spring
  f(d+1:s,2:n)  =f(d+1:s,2:n)   +dxa(d+1:s,:)            ! bend spring
 
-! normal force component
+! normal force component  ! XXX Should not need to use absolute value here XXX !
  f(1:d,1:n-1)=f(1:d,1:n-1) -  dxa(1:d,1:n-1)*abs(c(1:d,1:n-1)) ! node 2 direction
  f(1:d,2:n)  =f(1:d,2:n)   +  dxa(1:d,1:n-1)*abs(c(1:d,2:n))   ! node 1 direction
+! XXX Didn't work without absolute in 2D
 
 ! tangengital force component (torque):
  if (d==2) then        !2D
@@ -212,7 +234,7 @@ subroutine structurecalc(d,n,s,x,v,a)
  f(1:s,ia)=f(1:s,ia)-k*dxa(1:s,ia)
  f(1:s,ia) = f(1:s,ia)-b*v(1:s,ia)
 
-! updte velocities and positions
+! update velocities and positions
  v = v + dt*f/m
  x = x + dt*v
     
