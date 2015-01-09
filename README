@@ -1,0 +1,152 @@
+  The StrucTest program tests different structure calculation methods
+    Copyright (C) 2015  Michael Salay,      Mike.Salay at gmail
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+  
+  OpenGL visualization adopted from an OpenGL 2D box rotation example:
+    http://www.badprog.com/c-opengl-using-glrotatef-to-animate-shapes
+
+
+    StrucTest reads structure input from a file and calculates structure
+    response.  It currently only works with a fixed anchor and damped springs.
+    
+  
+      Actions:
+      
+        Setup:
+        
+          calc in fortran  - done
+          read in file     - done
+          2D and 3D calc   - mostly done...
+          forces/anchors   - ...
+          failure          - ...
+          variable params  - partly done...
+
+
+        Structure Testing:
+
+          Typical Methods  - not started...
+          Reduce problem   - not started...
+   
+        Methods:
+    
+          Explicit        - done
+          PredCor, eg RK  - not started...
+          Implicit Euler  - not started...
+          Sparse Implicit - not started...
+          Others?          - not started...
+
+           
+ Details of the methods tested and planned problem reduction methods 
+ are provided in SimpleStructures.pdf
+ 
+ Should eventually rearrange code classes to separate input read, simulation,
+   and results so that input read and visualization can be shared.
+   
+   The planned changes are as follows:
+   
+   - main should call StrucParams (which will read input (call ReadInput),
+     process input, and set up calc arrays (just need to split off ReadInput)
+   
+   - main should then call two simultaneous processes, Display and Simulate 
+     - Simulate runs simulation and Display manages the display
+       - They should both operate on pointers to same simulation data
+         - Simulate writes the data, Display reads the data
+       - It seems one should be run as a separate thread 
+         - Display should probably be the main process and Simulate the child
+       - Time step for Display and Simulate should be independent
+         - Simulation can wait for diplay if needed
+     - Simulate needs to be defined.
+     
+
+########################################################################
+
+  No installation info provided at this time since it is not intended
+  to be used externally yet.  The program is compiled using scripts from the 
+  README file in the StructureTest directory.
+
+########################################################################
+
+ Testing...
+
+ 1. Combine fortran full physics calc (position & rotation) for arbitrary object array... Done
+    This involves loading object types and properties from input file, clean matrix calculation
+ 2. Set up a few different methods
+ 3. Test structure problem reduction/simplification.
+
+########################################################################
+
+Structures input file:
+
+  -Defines structures for simulation                            
+  -1D attach for now -Each successive structure is assumed to attach only in one direction that is specified by the initial object rotation.
+
+
+Input file structure:
+
+One definition per line.  The first string in a line is a keyword that defines behavior.  If the first string on a line is not a keyword it is considered a comment.
+
+Valid keywords are:
+
+      pos  - starting position of first structure  (only one pos needed)
+      spr  - global spring and damping constants   (only one spr needed)
+      typ  - structure type.                       (multiple types allowed)
+      str  - structures in model                   (multiple structures allowed)
+      anc  - anchor connected to the first part    (multiple anchors allowed)
+
+      
+Potential future keywords:
+      2D or 3D: to indicate coordinate system usage (must come first!)
+      joi:      to indicate structure connectivity rather than only in one axis  (multiple joints expected to be allowed)
+      f:        force to connected to the first part (multiple forces allowed)
+
+- will eventually want to switch to arbitrary connections including arbitrary anchors and connection forces
+- the first joint should override the default connectivity
+
+Notes: 
+ *2D and 3D keywords must precede all others.
+ *types must precede structures
+  
+
+Keyword requirements:
+
+  2D - no additional information needed
+  3D - no additional information needed
+
+  pos - should be followed by numbers that indicate position, rotation, velocity, and angular velocity, in that order.   The number of entries depend on whether the calc is 2D or 3D.  For 2D coordinates 2 values (x,y) are needed to specify each of position and velocity whereas 1 value is neede for each of rotation and angular velocity.  For 3D coordinates 3 values (x,y,z) are required for each of the four parameters.  Currently rotation not only provides the rotation of the starting part but also the rotation and connection location for all subsequent parts as two connection nodes are assumed - one on top and one on the bottom.  Input angles are in degrees.  Defaults of 0.0 are used if pos is not included or if fewer numbers than needed are provided.
+
+  type - must be followed by string name, the equivalent OpenGL drawing object name (needs to be mapped), then a series of numbers specifying behavior including mass, required dimensions, and moments of inertia.  Types are expected to be unique. (currently code only assumes one type of object for 3D and a cube for 2D)
+
+  struc - must be followed by the name of a valid type followed by r, g, b values.  The default color is white {1.0,1.0,1.0}.  Parameters for the type are adopted.  Structures are automatically assumed to connect to the preceding structure.
+  
+  anc - (not implemented yet) must be followed by anchor position (and possibly eventually connected node or location (surface or offset attach))
+
+########################################################################
+
+Note the following Files are links:
+
+transrot.f95
+StrucParams.cpp
+StrucParams.h
+
+When working on the files they should be linked so that the originals are modified.
+
+  A script in the StructureTest directory, .makelinks, converts these files to links
+
+Before committing to repository these files should be copied locally.
+
+  A script in the StructureTest directory, .makelinks, converts these files to links
+
+These scripts must be run from the StructureTest directory

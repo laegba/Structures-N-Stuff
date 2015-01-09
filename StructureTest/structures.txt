@@ -1,0 +1,23 @@
+Structures input file -3D.
+File specification is provided in README.
+Note that this file is read as stream looking for keywords
+
+3D
+
+// position x, y, rotation, vx, vy, vr
+pos 2 1 0 0 0 -45
+
+// spring constant and damping constant
+spr 500 5
+
+// structure type name, GLvisname, mass, geom parameters (width for a rectangle or cube), inertial parameters
+typ cub cube 1 1 0.33333
+
+// structures type, color r g b
+str cub 1 0 0
+str cub 1 1 1
+str cub 0 1 0
+str cub 0 0 1
+
+// anchor x, y, z
+anc 0 1 0 -45 0 0

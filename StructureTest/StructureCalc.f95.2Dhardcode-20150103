@@ -1,0 +1,172 @@
+subroutine structurecalc(n,x,v)
+! dyn)
+
+!
+! 2D dynamics calculation test for cubes
+! M. Salay 20150103
+!
+
+! - Only considering graviational and inertial force
+! - Hardcoded for four cubes
+! - Assuming all masses are 1 kg
+!
+!  Possible forces
+!    - gravity
+!    - thrust
+!    - torque
+!    - air resistance
+!    - collision
+!
+
+!
+! To do:
+!
+!  - Update to use: r, v, m, 
+!    may need dx and f(including torque)
+!  - Function cross and cross2
+!  - Use fortran matrix ops instead of fixed loops
+!
+!  2d cross product: x cross y = x1y2-x2y1
+!
+
+
+! transferred variables
+ integer,parameter :: d=2        ! problem dimension
+ integer :: n                   ! number of parts
+ integer,parameter :: s=3                 ! array width
+ 
+ real, dimension(s,n) :: x      ! position and rotation
+ real, dimension(s,n) :: v      ! linear and angular velocities
+
+! variables that should be transferred
+ real,parameter :: dt=1.d-2      ! time step size
+ real,parameter :: g=9.80665     ! acceleration of gravity, m/s^2
+
+ real,parameter :: k=500.        ! spring constant
+ real,parameter :: b=5.          ! damping constant
+
+ real,parameter :: w=1.          ! block thickness
+ real,parameter :: h=w/2         ! half block thickness
+
+ real,parameter :: mp=1.         ! mass, kg
+ real,parameter :: Q=mp*w**2./6. ! cube moment of inertia
+
+
+! working variables
+ real, dimension(s,n) :: f       ! forces and torques
+ real :: dx,dy,dr                ! displacements x, y, r
+ real :: dvx,dvy                 ! difference in velocities x, y
+ real :: dw                      ! difference in angular velocities
+
+
+
+ real, dimension(s,n) :: m       ! mass/inertia array
+ real, dimension(3) :: a         ! anchor position
+
+ m(1:2,1:n)=mp
+ m(3,1:n)=Q
+
+ a(1)=-0.
+ a(2)=0.
+ a(3)=-0.786
+
+
+! dyn indices (parameter,object number) (c++ with reversed order)
+!
+! Order of x parameters:
+!   1. x,y position for 2D and x,y,z for 3D
+!   2. rotation r for 2D and rx, ry, rz for 3D
+
+
+! Order of V parameters:
+!   1. x,y velocity for 2D and x,y,z velocity for 3D
+!   2. angular velocity w for 2D and wx, wy, wz for 3D
+
+! Interacting structures; 
+!     F = −kx − Bv − ma = gravity + thrust = mg + thrust
+!
+!     root node is connected to anchor
+!
+
+!                   v = v + a * dt    ! linear velocity
+!                   w = w + n * dt    ! angular velocity
+!                   x = x + v * dt    ! displacement
+!                   r = r + w * dt    ! rotation
+!    where:
+!       x-position, v-velocity, a-acceleration, dt-time step
+!       r-rotaion, w-angular velocity, n-angular acceleration,
+
+! 
+!  Explicit sequential calculation
+!
+!      - Updates forces, acceleration, velocity, and displacement in that order.
+!      - Updated values are used for the subsequent steps.
+!
+!                   v2 = v1 + a2 * dt    ! linear velocity
+!                   w2 = w1 + n2 * dt    ! angular velocity
+!                   x2 = x1 + v2 * dt    ! displacement
+!                   r2 = r1 + w2 * dt    ! rotation
+!
+!    where: 1-old time, 2-new time
+!
+!      - Becomes unstable for high spring and damping constants
+!
+
+
+! initialize forces
+ f=0.
+ 
+ f(2,1:n)=f(2,1:n)-m(2,1:n)*g    ! gravity force
+
+! apply joint forces
+ do i=1,n-1
+!  2d cross product: x cross y = x1y2-x2y1
+   dx= x(1,i) + h*sin(x(3,i)) - x(1,i+1) + h*sin(x(3,i+1))
+   dy= x(2,i) + h*cos(x(3,i)) - x(2,i+1) + h*cos(x(3,i+1))
+   dr= x(3,i) - x(3,i+1)
+   f(1,i)=f(1,i)-k*dx        ! x force
+   f(2,i)=f(2,i)-k*dy        ! y force
+   f(3,i)=f(3,i) &           ! torque
+     - k*dr&                 !bend resistance !applied torque
+     + h*sin(x(3,i))*k*dy - h*cos(x(3,i))*k*dx
+   f(1,i+1)=f(1,i+1)+k*dx    ! x force
+   f(2,i+1)=f(2,i+1)+k*dy    ! y force
+   f(3,i+1)=f(3,i+1) &       ! torque
+     + k*dr&                 !bend resistance
+     + h*sin(x(3,i+1))*k*dy - h*cos(x(3,i+1))*k*dx !applied torque
+
+ end do
+
+! apply damping force (Velocity contribution)
+! reuse dx and dy
+ do i=1,n-1
+   dx=v(1,i)-v(1,i+1)
+   dy=v(2,i)-v(2,i+1)
+   dr=v(3,i)-v(3,i+1)
+   f(1,i)=f(1,i)-b*dx       ! x force
+   f(2,i)=f(2,i)-b*dy       ! y force
+   f(3,i)=f(3,i)-b*dr       ! r force
+   f(1,i+1)=f(1,i+1)+b*dx   ! x force
+   f(2,i+1)=f(2,i+1)+b*dy   ! y force
+   f(3,i+1)=f(3,i+1)+b*dr   ! r force
+ end do
+
+! apply boundary conditions: fixed link and/or forces
+ ! fixed link between first node and (0,2.5)
+ dx= x(1,1) - h*sin(x(3,1)) - a(1)
+ dy= x(2,1) - h*cos(x(3,1)) - a(2)
+ dr= x(3,1) - a(3)
+ f(1,1)=f(1,1)-k*dx       ! x spring force
+ f(2,1)=f(2,1)-k*dy       ! y spring force
+ f(3,1)=f(3,1)-k*dr       ! r spring force
+ 
+ f(1,1)=f(1,1)-b*v(1,1) ! x damping force
+ f(2,1)=f(2,1)-b*v(2,1) ! y damping force
+ f(3,1)=f(3,1)-b*v(3,1) ! r damping force
+
+ v = v + dt*f/m
+ x = x + dt*v
+end
+
+
+

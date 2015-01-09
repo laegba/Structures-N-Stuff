@@ -1,0 +1,187 @@
+subroutine structurecalc(d,n,s,x,v)
+!
+! 2D dynamics calculation test for cubes
+! M. Salay 20150103
+!
+
+! - Only considering graviational and inertial force
+! - Hardcoded for four cubes
+! - Assuming all masses are 1 kg
+!
+!  Possible forces
+!    - gravity
+!    - thrust
+!    - torque
+!    - air resistance
+!    - collision
+!
+! To do:
+!
+!  - Test 3D
+!  - Forces and other parameters as arguments
+!  - Function cross and cross2
+!
+!  2d cross product: x cross y = x1y2-x2y1
+!
+!
+!  XXX ***** SHOULD USE ":" TO INDICATE "ALL" AND FORALL FOR LOOPS ***** XXX
+!
+!
+ use transrot
+
+
+ implicit none
+ integer i
+
+! transferred variables
+ integer :: d                   ! problem dimension
+ integer :: n                   ! number of parts
+ integer :: s                   ! array width
+ 
+ real, dimension(s,n) :: x      ! position and rotation
+ real, dimension(s,n) :: v      ! linear and angular velocities
+
+! variables that should be transferred
+ real,parameter :: dt=1.d-2      ! time step size
+ real,parameter :: g=9.80665     ! acceleration of gravity, m/s^2
+
+ real,parameter :: k=500.        ! spring constant
+ real,parameter :: b=5.          ! damping constant
+
+ real,parameter :: w=1.          ! block thickness
+ real,parameter :: h=w/2         ! half block thickness
+
+ real,parameter :: mp=1.         ! mass, kg
+ real,parameter :: Q=mp*w**2./6. ! cube moment of inertia
+
+
+! working variables
+ real, dimension(s,n) :: f       ! forces and torques
+ real :: dx,dy,dr                ! displacements x, y, r
+! real :: dvx,dvy                 ! difference in velocities x, y
+ real :: dw                      ! difference in angular velocities
+
+ real, dimension(s,n) :: m       ! mass/inertia array
+
+ real, dimension(s,n-1) :: dxa   ! differences
+
+ real,dimension(d,n) :: n1,n2    ! Each part has 2 nodes (for now)
+ real,dimension(d,n) :: c        ! Cosines
+
+ real, dimension(s) :: a         ! anchor position
+ integer :: ia=1                 ! anchor index
+
+ m(1:2,1:n)=mp
+ m(3,1:n)=Q
+
+ a(1)=-0.
+ a(2)=0.
+ a(3)=0.5
+ 
+
+
+! dyn indices (parameter,object number) (c++ with reversed order)
+!
+! Order of x parameters:
+!   1. x,y position for 2D and x,y,z for 3D
+!   2. rotation r for 2D and rx, ry, rz for 3D
+
+
+! Order of V parameters:
+!   1. x,y velocity for 2D and x,y,z velocity for 3D
+!   2. angular velocity w for 2D and wx, wy, wz for 3D
+!
+!
+!   Calcualate first as damped springs...
+!   Then as truss (shared nodes)
+!     -stretchy/bendable truss
+
+! Interacting structures; 
+!     F = −kx − Bv − ma = gravity + thrust = mg + thrust
+!
+!     root node is connected to anchor
+!
+
+!                   v = v + a * dt    ! linear velocity
+!                   w = w + n * dt    ! angular velocity
+!                   x = x + v * dt    ! displacement
+!                   r = r + w * dt    ! rotation
+!    where:
+!       x-position, v-velocity, a-acceleration, dt-time step
+!       r-rotaion, w-angular velocity, n-angular acceleration,
+
+! 
+!  Explicit sequential calculation
+!
+!      - Updates forces, acceleration, velocity, and displacement in that order.
+!      - Updated values are used for the subsequent steps.
+!
+!                   v2 = v1 + a2 * dt    ! linear velocity
+!                   w2 = w1 + n2 * dt    ! angular velocity
+!                   x2 = x1 + v2 * dt    ! displacement
+!                   r2 = r1 + w2 * dt    ! rotation
+!
+!    where: 1-old time, 2-new time
+!
+!      - Becomes unstable for high spring and damping constants
+!
+
+
+! Evaluate node positions - eventually through vector operation
+  c(1,1:n)=sin(x(3,1:n))
+  c(2,1:n)=cos(x(3,1:n))
+
+  n1(1:d,1:n)=x(1:d,1:n) - h*c   !node 1 absolute position
+  n2(1:d,1:n)=x(1:d,1:n) + h*c   !node 2 absolute position
+
+! c(d,n)
+
+! given angles, calculate cosine 
+! XXX (only works for 2D)
+! x_vector Cos = Cos( theta) = x/h
+! y_vector Cos = Sin (theta) = y/h
+!
+!  Only works because: 
+! Cos yangle = Cos (90_degrees - xangle) = Sin (xangle)
+!   This in not the case for 3D
+!
+! In 3D, however, can actually use all provided cosines
+
+! initialize forces
+ f=0.
+ 
+ f(2,1:n)=f(2,1:n)-m(2,1:n)*g    ! apply gravity force
+
+ dxa(1:d,1:n-1)  = (n2(1:d,1:n-1)-n1(1:d,2:n))*k   ! calculate linear dx*k
+ dxa(d+1:s,1:n-1)= (x(d+1:s,1:n-1)-x(d+1:s,2:n))*k ! calculate rot    dx*k
+ f(1:s,1:n-1)=f(1:s,1:n-1) -dxa ! linear and rotational dx-based force:
+ f(1:s,2:n)  =f(1:s,2:n)   +dxa
+! additional torque:
+ f(3,1:n-1)=f(3,1:n-1)+h*c(1,1:n-1)*dxa(2,1:n-1)-h*c(2,1:n-1)*dxa(1,1:n-1) ! XXX
+ f(3,2:n)=  f(3,2:n)  +h*c(1,2:n)  *dxa(2,2:n)  -h*c(2,2:n)  *dxa(1,2:n)   ! XXX
+ ! XXX FIXED FOR 2D - (i.e. CAN'T DO 3D) - should be matrix multiplyable
+ ! XXX  Need to generalize for 3D
+ ! XXX  This should be done using matrix multiplication (cross product)
+
+
+! apply damping force (Velocity contribution)
+ dxa=v(1:s,1:n-1)-v(1:s,2:n)
+ f(1:s,1:n-1)=f(1:s,1:n-1) -b*dxa
+ f(1:s,2:n)=f(1:s,2:n)     +b*dxa
+
+
+! apply boundary conditions: fixed link and/or forces
+ ! fixed link to first node
+ 
+ dxa(1:d,ia)=n1(1:d,ia)
+ dxa(d+1:s,ia)=x(d+1:s,ia)
+ dxa(1:s,ia)=dxa(1:s,ia)-a
+ f(1:s,ia)=f(1:s,ia)-k*dxa(1:s,ia)
+ f(1:s,ia) = f(1:s,ia)-b*v(1:s,ia)
+
+ v = v + dt*f/m
+ x = x + dt*v
+end
+
+
+

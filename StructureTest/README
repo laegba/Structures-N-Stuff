@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# Structure Test
+# Tests different methods to calculate structure behavior
+#
+# Reads structure input from file and processes calculation
+# M. Salay 20141231
+
+# clear screen
+clear
+
+# remove working files
+rm *.o        2>/dev/null
+rm *.mod      2>/dev/null
+rm StrucTest  2>/dev/null
+
+#compile and run  with:
+  f95 -c transrot.f95
+  f95 -c StructureCalc.f95
+  g++ -std=c++0x main.cpp StructureView.cpp StrucParams.cpp -o StrucTest StructureCalc.o transrot.o -lglut -lGLU -lgfortran; ./StrucTest  structures.txt
+
+exit
+########################################################################
+f95 -c transrot.f95
+
+
+

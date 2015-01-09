@@ -1,0 +1,10 @@
+#!/bin/bash
+
+rm StrucParams.cpp
+rm StrucParams.h
+rm transrot.f95
+
+cp ../../../test/cppio/cppinputparse/StrucParams.cpp .
+cp ../../../test/cppio/cppinputparse/StrucParams.h .
+cp ../../../test/transrot/transrot.f95 .
+
