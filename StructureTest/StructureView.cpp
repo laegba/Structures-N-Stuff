@@ -30,7 +30,7 @@ using namespace std;
    GLUquadricObj *obj = gluNewQuadric(); // required to draw cylinders,spheres
 
   extern "C" {
-    void structurecalc_(int *d ,int *np ,int *s , float x[], float v[]);
+    void structurecalc_(int *d ,int *np ,int *s , float x[], float v[], float a[]);
   };
 
 
@@ -46,6 +46,7 @@ using namespace std;
 //  vector <float> pos (24);      // position and velocity:  vx,vy,w
   vector <float> x (12);        // position and rotation
   vector <float> v (12);        // velocity
+  vector <float> a {0.,0.,0.}; // anchor position and rotation
 
   vector <float> color 
     {1., 0., 0.,
@@ -83,7 +84,7 @@ StructureView::StructureView(int *ac, char *av[]) {
   {
     string fileName=av[1];
     StrucParams p(fileName);
-//    p.Summary(); // summarize/display all input // uncomment to view processed input
+    p.Summary(); // summarize/display all input // uncomment to view processed input
 //    cout << endl;
 
     D=p.Dimension;
@@ -92,6 +93,7 @@ StructureView::StructureView(int *ac, char *av[]) {
 
     x.clear();x=p.Position;
     v.clear();v=p.Velocity;
+    a.clear();a=p.anchor;
 
     k=p.Spring;
     b=p.Damp;
@@ -113,6 +115,10 @@ StructureView::StructureView(int *ac, char *av[]) {
       cout << ' ' << c;
   cout << endl;
 
+  cout << "a: ";
+  for (auto c : a)
+      cout << ' ' << c;
+  cout << endl;
 
   Anim(ac, av);
   
@@ -170,6 +176,7 @@ void StructureView::init(int *ac, char *av[])
  */
 void StructureView::managerDisplay(void)
 {
+ float z;
   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
 
@@ -179,9 +186,14 @@ void StructureView::managerDisplay(void)
     switch (D)
     {
     case 3: /* cube */  
-      glTranslatef(x[s*i], x[s*i+1], 0.0);
+      glTranslatef(x[s*i], x[s*i+1], x[s*i+2]);
 //      glRotatef(45., 0.0, 0.0,1.0);
-      glRotatef(x[s*i+5]/deg2rad, 0.0, 0.0,-1.0);
+
+
+//      float a=sqrt(pow(X[3],2.) + pow(X[4],2.) + pow(X[5],2.)); // theta
+
+      z=sqrt(pow(x[s*i+3],2.)+pow(x[s*i+4],2.)+pow(x[s*i+5],2.))/deg2rad;
+      glRotatef(z, -x[s*i+3]/z, -x[s*i+4]/z, -x[s*i+5]/z);
       glRotatef(90., 1.0, 0.0,0.0);  // additional cyl rotation to make vert
       glColor3f(color[3*i], color[3*i+1],color[3*i+2]);
 //      glutSolidCube(w);  
@@ -249,9 +261,9 @@ void StructureView::managerIdle(void)
 
 /*  Calculate positions with a Fortran subroutine */
 
-  structurecalc_(&D,&np,&s,&x[0],&v[0]);      
+  structurecalc_(&D,&np,&s,&x[0],&v[0],&a[0]);      
 
-
+// /*
 //  cout << "xv:";
   cout << endl;
   for( int i = 0; i < np ; i +=1 )
@@ -264,9 +276,13 @@ void StructureView::managerIdle(void)
 //      cout << ' ' << v(j);
     cout << endl;
   }
+  
+  cout << "A: ";
+  for( int j = 0; j < s ; j +=1 )
+      cout << " " << a[j];
+    cout << endl;
+// */
 
-    
-    
     glutPostRedisplay();
 
 }
@@ -279,13 +295,15 @@ void StructureView::managerResize(int w, int h)
    glViewport(0, 0, (GLsizei)h, (GLsizei)h);
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
-//   glOrtho(-5.,5.,-5.,5.,-5.,5.);     // 2D REndering (use sizeh and sizew)
+//   glOrtho(-5.,5.,-5.,5.,-5.,5.);     // 2D Rendering view (use sizeh and sizew)
 /* note that perspective z is relative to camera position */
-   gluPerspective(90.,1.,.01,100.);  // camera must be closer than far clip
-//   glFrustum(-5,+5,-5,+5,-100,100);  // 3D REndering "complex"
-   gluLookAt(0.,0.,5., // must be after model view
-             0.,0.,0.,
-             0,1,0);
+   gluPerspective(45.,1.,.01,100.);     //  3D Rendering view 
+                                        // camera must be closer than far clip!
+//   view angle/
+//   glFrustum(-5,+5,-5,+5,-100,100);   // 3D Rendering view
+   gluLookAt(0.,0.,10., // eye          // must be after model view
+             0.,0.,0.,  // look at
+             0.,1.,0.); // world up
    glMatrixMode(GL_MODELVIEW);
 /* gluLookAt must be called after Model View */
    glLoadIdentity();

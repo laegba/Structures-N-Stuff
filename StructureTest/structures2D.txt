@@ -1,6 +1,6 @@
 Structures input file.
-File specification is provided in README.
-Note that this file is read as stream looking for keywords
+File specification is provided in project README.
+Note that this file is read line by line checking the first word in lines for keywords
 
 // position x, y, rotation, vx, vy, vr
 pos 2 1 -45

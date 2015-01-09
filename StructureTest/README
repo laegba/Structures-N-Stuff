@@ -20,8 +20,12 @@ rm StrucTest  2>/dev/null
   g++ -std=c++0x main.cpp StructureView.cpp StrucParams.cpp -o StrucTest StructureCalc.o transrot.o -lglut -lGLU -lgfortran; ./StrucTest  structures.txt
 
 exit
-########################################################################
-f95 -c transrot.f95
+
+################################################################################
+#  File specification is provided in project README. (in parent directory)     #
+################################################################################
+
+
 
 
 

@@ -1,6 +1,6 @@
-Structures input file -3D.
-File specification is provided in README.
-Note that this file is read as stream looking for keywords
+Structures input file.
+File specification is provided in project README.
+Note that this file is read line by line checking the first word in lines for keywords
 
 3D
 
