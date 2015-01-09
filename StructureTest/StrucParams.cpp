@@ -229,6 +229,19 @@ void StrucParams::Summary()
     for (auto c : Velocity)
       cout << " " << c;
   cout << endl;  cout << endl;
+  
+  
+  cout << "  PROCESSED: Anchor rotation converted to radians" << endl;
+    for( int i = Dimension ; i < anchor.size(); i +=1 )
+  {
+      anchor[i]=anchor[i]*deg2rad;
+  }
+  cout << endl;
+  cout << "   ";
+    for (auto c : anchor)
+      cout << " " << c;
+  cout << endl;  cout << endl;
+
 }
 
 
