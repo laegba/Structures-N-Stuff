@@ -20,7 +20,12 @@
 
 
     StrucTest reads structure input from a file and calculates structure
-    response.  It currently only works with a fixed anchor and damped springs.
+    response using the StuctureCalc routine.  
+    
+    The purpose of the StrucTest program is to develop the StructureCalc routine \
+    to calculate structureal response and structural failure using different methods.
+    
+    It currently only works with a fixed anchor and damped springs.
     
   
       Actions:

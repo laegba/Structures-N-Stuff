@@ -32,7 +32,18 @@ module transrot
 !
 !            
 !  Usage:
-!          note reversed index order (j column,i row)
+!          notes: 
+!
+!                1) reversed index order (j column,i row)
+!
+!                2) rotations used for a right handed coordinate system are left handed
+!                so that the transformation converts a direction or point in global
+!                coordinates to local coordinates
+!
+!                Should rename routines to be clearer about what is being done
+!
+!                Should ensure that it is clear how to convert both ways
+!
 !        
 !    For full transformation need to define size 3 position and rotation vectors:
 !        1) a T(4,3) transformation array
