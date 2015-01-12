@@ -29,6 +29,7 @@
 
 # Main Executables
 StrucTest
+spawn
 
 # Temporary files
 *~

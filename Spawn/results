@@ -1,0 +1,173 @@
+[H[2JHello World!
+
+time: 1421019050
+Test external vector modification:
+1 2 3 4 5 6 7 8 9 
+8 1
+8 1
+
+Test start a new thread:
+taska says: Hello
+
+Check number of cores:
+0
+4
+
+Start multiple threads of same code simultaneously:
+Launched by thread 0
+Launched by thread 1
+Launched by thread 2
+Launched by thread Launched by thread 34
+
+Launched by thread 8
+Launched by thread 6
+Launched by thread 5
+Launched by thread 7
+Launched from the main
+Launched by thread 9
+
+Check to see if main can read data changed from a thread:
+ 1
+ 10
+ 10
+ 10
+ 10
+ 10
+ 10
+ 10
+ 10
+ 10
+
+i: 0
+i: 1
+i: 2
+i: 3
+i: 4
+437
+Doesn't always add up to 500!
+But all processes are operating on same variables!
+
+i: 0
+i: 1
+i: 2
+i: 3
+i: 4
+500
+Always add up to 500!
+ This can be seen by using much larger number of threads
+ It seems that the issue could also have been avoided 
+   by not having all threads operate on same variable/instance.
+
+Test simple worker, workr1:
+  Using sleep(0.1) to wait.
+
+data: 1 0 0
+wait: 1 0 0
+
+asin: 0 0 0
+post: 1 0 10 0us
+
+asin: 0 0 -5000
+post: 1 0 20 0us
+
+asin: 0 0 -5000
+post: 1 0 -4990 0us
+
+Worker Exiting...
+done: 1 1 -4990
+Way too slow thread response (previously - now OK!)!!! 
+  Goes through loop updating task but does not indicate task complete 
+  even though no pause between commands exists in workr1!!!  
+  Saying 1 or 0 us to transmit to thread and back for 10 additions task. 
+
+
+Test simple worker, workr2:
+
+In Worker thread
+data: 1 0 0
+wait: 1 0 0
+
+asin: 0 0 0
+main() signals data ready for processing
+Worker thread is processing data
+Back in main(), data = Example data
+post: 1 0 10 12000ns 9388ns
+
+asin: 0 0 10
+main() signals data ready for processing
+Worker thread is processing data
+Back in main(), data = Example data
+post: 1 0 20 5000ns 5040ns
+
+asin: 0 0 -5000
+main() signals data ready for processing
+Worker thread is processing data
+Back in main(), data = Example data
+post: 1 0 -4990 16000ns 5036ns
+
+done: 1 1 -4990
+
+Worker Exiting...Ha! It takes longer for the muxing and condition than the simple sleep 
+  It seems that the threads didn't sleep correctly anyways. They sometimes 
+  slept a shorter time.  In any case the switching with sleep probably 
+  consumes processing power on the management side which should be reserved for computation. 
+
+
+Testing workr1 again with sleep 0 and ns 
+
+data: 1 0 0
+wait: 1 0 0
+
+asin: 0 0 0
+post: 1 0 10 1us 270ns
+
+asin: 0 0 -5000
+post: 1 0 20 0us 207ns
+
+asin: 0 0 -5000
+post: 1 0 -4990 1000ns 223ns
+
+Worker Exiting...
+done: 1 1 -4990
+sleep(0) seems nearly 100 times faster than mutex! ~230ns! call Check if whole time is affected and check for extra verbosity   in workr2 slows it down.
+   Total time for workr1 from start to before end text is: 54518ns
+
+
+
+Test simple worker, workr2p:
+
+data: 1 0 0
+wait: 1 0 0
+
+asin: 0 0 0
+post: 1 0 10 6000ns 5690ns
+
+asin: 0 0 10
+post: 1 0 20 4000ns 4439ns
+
+asin: 0 0 -5000
+post: 1 0 -4990 14000ns 4356ns
+
+done: 1 1 -4990
+   Total time for workr2 from start to before end text is: 45799ns
+
+ Total job for both ~ 70us. Workr1 (sleep) can go down to (38us) 
+   whereas workr2 (mutex) always about the same (down to 60us).
+   Workr1 actually hit 130us a few times but infrequently.
+   Keeping in mind that this may be different under load
+     so will continue with both approaches.
+
+     For 60 FPS each frame will be 1.67E-2s.
+     For 60 FPS each frame will be 3.33E-2s.
+     This consumes 4 thousandths of the time of a 60FPS frame
+     leaving 99.6% of the time for the calculations themselves.
+
+  Doing managers with both sleep(0) and mutex
+  Rearranging variables to match the structure calculations 
+    A) Job control variabes  
+    B) State class containing  
+      1) position vector           
+      2) velocity vector           
+      3) inertia                   
+      4) failure criteria          
+Worker Exiting...
