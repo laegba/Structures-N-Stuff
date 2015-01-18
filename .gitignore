@@ -30,6 +30,11 @@
 # Main Executables
 StrucTest
 spawn
+vectortexture
+
+# Images
+*.png
+*.svg
 
 # Temporary files
 *~

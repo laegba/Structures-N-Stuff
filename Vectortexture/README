@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# SVG to PNG test c++ code
+clear
+
+#compile with:
+rm vectortexture 2>/dev/null
+g++ main.cpp -o vectortexture `pkg-config --cflags --libs librsvg-2.0`; ./vectortexture
+
+
+
+
+exit
+
+
+#original:
+#g++ main.cpp -o vectortexture; ./vectortexture
+
+
+# had to get librsvg:
+#                     apt-get install librsvg2-bin
+#                     apt-get install librsvg2-dev
+
+
+#didn't work
+#g++ -c -o vectortexture.o main.cpp $(pkg-config --cflags librsvg-2.0)
+#g++ -o vectortexture vectortexture.o $(pkg-config --libs librsvg-2.0)
+

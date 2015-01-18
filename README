@@ -26,10 +26,10 @@
     The project is a very rough draft.
 
 
-    The purpose of the StrucTest program is to develop the StructureCalc routine \
-    to calculate structureal response and structural failure using different methods.
+    The purpose of the StrucTest program is to develop the StructureCalc routine
+    to calculate structural response and structural failure using different methods.
 
-    The purpose of the Spawn is to test multithreading.
+    The purpose of the Spawn program is to test multithreading.
     
     Nothing has beed added yet for graphics or orbits.
     
@@ -102,8 +102,8 @@
 ########################################################################
 
   No installation info provided at this time since it is not intended
-  to be used externally yet.  The main program is compiled using scripts from the 
-  README file in the StructureTest directory.
+  to be used externally yet.  The main program is compiled using scripts from 
+  the README file in the StructureTest directory.
 
 ########################################################################
 
